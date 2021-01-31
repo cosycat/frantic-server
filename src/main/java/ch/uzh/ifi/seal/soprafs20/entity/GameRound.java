@@ -40,6 +40,11 @@ public class GameRound {
     private Card[] marketArray;
     private Boolean[] marketDisabledArray;
 
+    private int defaultTimerSeconds = 30; // The time in seconds the default timer uses. All other timers are dependent on this timer.
+    private double fantasticFourTimerExtension = 1.5; // Time for fantastic four: defaultTimerSeconds * fantasticFourTimerExtension.
+    private double counterAttackTimerExtension = 0.2;
+
+
     public GameRound(Game game, String lobbyId, List<Player> listOfPlayers, Player firstPlayer) {
         this.game = game;
         this.lobbyId = lobbyId;
@@ -133,8 +138,8 @@ public class GameRound {
         }
         this.gameService.sendStartTurn(this.lobbyId, this.currentPlayer.getUsername(), timeBombRounds);
         this.gameService.sendPlayable(this.lobbyId, this.currentPlayer, getPlayableCards(this.currentPlayer), true, false);
-        this.gameService.sendTimer(this.lobbyId, 30);
-        startTurnTimer(30);
+        this.gameService.sendTimer(this.lobbyId, defaultTimerSeconds);
+        startTurnTimer(defaultTimerSeconds);
     }
 
     public void playerFinishesTurn(String identity) {
@@ -190,10 +195,10 @@ public class GameRound {
                             else {
                                 sendGameState();
                                 this.timer.cancel();
-                                int seconds = 30;
+                                int seconds = defaultTimerSeconds;
                                 // fantastic four action is given more time to perform
                                 if (cardToPlay.getValue() == Value.FANTASTICFOUR) {
-                                    seconds = 45;
+                                    seconds = (int) (defaultTimerSeconds * fantasticFourTimerExtension);
                                 }
                                 this.gameService.sendTimer(this.lobbyId, seconds);
                                 this.gameService.sendActionResponse(this.lobbyId, player, cardToPlay);
@@ -226,10 +231,10 @@ public class GameRound {
                     this.gameService.sendChatMessage(this.lobbyId, chat);
                     sendGameState();
 
-                    int seconds = 30;
+                    int seconds = defaultTimerSeconds;
                     // fantastic four action is given more time to perform
                     if (cardToPlay.getValue() == Value.FANTASTICFOUR) {
-                        seconds = 45;
+                        seconds = (int) (defaultTimerSeconds * fantasticFourTimerExtension);
                     }
                     this.gameService.sendAttackTurn(this.lobbyId, counterAttacker.getUsername());
                     this.gameService.sendActionResponse(this.lobbyId, counterAttacker, relevantCard);
@@ -258,8 +263,8 @@ public class GameRound {
         }
         sendGameState();
         this.gameService.sendActionResponse(this.lobbyId, niceTryPlayer, cardToPlay);
-        this.gameService.sendTimer(this.lobbyId, 30);
-        startInterTurnTimer(30);
+        this.gameService.sendTimer(this.lobbyId, defaultTimerSeconds);
+        startInterTurnTimer(defaultTimerSeconds);
     }
 
     // in a turn, the current player can choose to draw a card
@@ -425,10 +430,10 @@ public class GameRound {
                         "You are being attacked by " + attacker, 2);
             }
         }
-        this.gameService.sendTimer(this.lobbyId, 6);
+        this.gameService.sendTimer(this.lobbyId, (int) (defaultTimerSeconds * counterAttackTimerExtension));
 
         this.attackState = true;
-        startCounterAttackTimer(6);
+        startCounterAttackTimer((int) (defaultTimerSeconds * counterAttackTimerExtension));
     }
 
     private void prepareNiceTry() {
@@ -436,8 +441,8 @@ public class GameRound {
             int[] card = player.hasNiceTry();
             this.gameService.sendPlayable(this.lobbyId, player, card, false, false);
         }
-        this.gameService.sendTimer(this.lobbyId, 5);
-        startNiceTryTimer(5);
+        this.gameService.sendTimer(this.lobbyId, (int) (defaultTimerSeconds * counterAttackTimerExtension));
+        startNiceTryTimer((int) (defaultTimerSeconds * counterAttackTimerExtension));
     }
 
     //================================================================================
@@ -975,6 +980,10 @@ public class GameRound {
     //================================================================================
     // Timers
     //================================================================================
+
+    public int getDefaultTimerSeconds() {
+        return defaultTimerSeconds;
+    }
 
     public void startTurnTimer(int seconds) {
         int milliseconds = seconds * 1000;
